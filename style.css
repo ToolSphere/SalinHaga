@@ -140,11 +140,12 @@ body::after{
    LAYOUT
 ========= */
 .shell{
-  max-width:900px;
-  margin:0 auto;
-  padding:12px 14px 14px;
-  position:relative;
-  z-index:3;
+  width: 92%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1rem;
+  position: relative;
+  z-index: 3;
 }
 
 .hero{
@@ -156,10 +157,10 @@ body::after{
 }
 
 .heroTopRow{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:12px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: clamp(10px, 1.5vw, 20px);
 }
 
 .brand{
@@ -191,10 +192,10 @@ body::after{
 }
 
 .markLarge{
-  width:42px;
-  height:42px;
-  font-size:18px;
-  border-radius:14px;
+  width: clamp(38px, 4vw, 52px);
+  height: clamp(38px, 4vw, 52px);
+  font-size: clamp(16px, 1.6vw, 22px);
+  border-radius: 14px;
 }
 
 .titleRow{
@@ -290,10 +291,10 @@ body::after{
    HUB CARD
 ========= */
 .hubCard{
-  position:relative;
-  overflow:hidden;
-  padding:14px;
-  border-radius:22px;
+  position: relative;
+  overflow: hidden;
+  padding: clamp(12px, 2vw, 24px);
+  border-radius: 22px;
   background: linear-gradient(180deg, rgba(255,255,255,.62), rgba(255,255,255,.48));
   border:1px solid rgba(255,255,255,.34);
   box-shadow: var(--shadow);
@@ -345,13 +346,13 @@ body::after{
 }
 
 .langChooserRow{
-  position:relative;
-  z-index:1;
-  display:grid;
+  position: relative;
+  z-index: 1;
+  display: grid;
   grid-template-columns: 1fr auto 1fr;
-  gap:12px;
-  align-items:end;
-  margin-bottom:14px;
+  gap: clamp(10px, 1.2vw, 18px);
+  align-items: end;
+  margin-bottom: clamp(10px, 1.5vw, 18px);
 }
 
 .chooserCol{
@@ -427,24 +428,24 @@ textarea:focus{
    IO HUB
 ========= */
 .ioHubGrid{
-  position:relative;
-  z-index:1;
-  display:grid;
+  position: relative;
+  z-index: 1;
+  display: grid;
   grid-template-columns: 1fr auto 1fr;
-  gap:14px;
-  align-items:center;
+  gap: clamp(10px, 1.5vw, 20px);
+  align-items: center;
 }
 
 .panel{
-  min-width:0;
-  padding:14px;
-  border-radius:22px;
+  min-width: 0;
+  padding: clamp(12px, 1.5vw, 20px);
+  border-radius: 22px;
   background: linear-gradient(180deg, rgba(255,255,255,.64), rgba(255,255,255,.48));
   border:1px solid rgba(255,255,255,.28);
   box-shadow: var(--shadow2);
-  min-height:220px;
-  display:flex;
-  flex-direction:column;
+  min-height: 28vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .panelHead{
@@ -474,10 +475,10 @@ textarea:focus{
 }
 
 textarea{
-  width:100%;
-  min-height:110px;
-  resize:none;
-  padding:12px;
+  width: 100%;
+  min-height: 14vh;
+  resize: none;
+  padding: clamp(10px, 1.2vw, 14px);
   border-radius:18px;
   border:1px solid rgba(86,56,25,.12);
   background: rgba(255,255,255,.70);
@@ -488,8 +489,8 @@ textarea{
 }
 
 .output{
-  min-height:110px;
-  padding:12px;
+  min-height: 14vh;
+  padding: clamp(10px, 1.2vw, 14px);
   border-radius:18px;
   border:1px solid rgba(86,56,25,.12);
   background: rgba(255,255,255,.68);
@@ -507,11 +508,11 @@ textarea{
 }
 
 .midSwapBtn{
-  width:62px;
-  height:62px;
-  border:none;
-  border-radius:999px;
-  font-size:26px;
+  width: clamp(48px, 5vw, 70px);
+  height: clamp(48px, 5vw, 70px);
+  border: none;
+  border-radius: 999px;
+  font-size: clamp(20px, 2vw, 28px);
   font-weight:900;
   cursor:default;
   color:#332114;
@@ -534,11 +535,11 @@ textarea{
 }
 
 .actionBtn{
-  border:none;
-  border-radius:999px;
-  padding:10px 16px;
-  min-width:120px;
-  font-size:14px;
+  border: none;
+  border-radius: 999px;
+  padding: clamp(9px, 1vw, 12px) clamp(14px, 2vw, 20px);
+  min-width: clamp(110px, 14vw, 150px);
+  font-size: clamp(13px, 1.2vw, 15px);
   font-weight:900;
   cursor:pointer;
   box-shadow: 0 14px 24px rgba(0,0,0,.14);
