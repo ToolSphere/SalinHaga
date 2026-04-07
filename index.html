@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cross Translator Prototype</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0b1020" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body id="appBody">
+
+  <!-- Decorative background -->
+  <div class="bg">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+    <div class="grid"></div>
+  </div>
+
+  <div class="bgOverlay"></div>
+
+  <main class="shell">
+
+    <header class="hero heroCenter">
+      <div class="heroTopRow">
+        <div class="brand brandCenter">
+          <div class="mark markLarge" aria-hidden="true">🌐</div>
+          <div class="brandText">
+            <div class="titleRow">
+              <h1 class="title heroTitle">Cross-Language Translator</h1>
+              <span class="prototypeBadge">Prototype</span>
+            </div>
+            <div class="subtitle heroSubtitle">
+              Dictionary-based · sentence templates · phrase-first · real-time
+            </div>
+          </div>
+        </div>
+
+        <div class="meta metaTop">
+          <div class="statusPill statusGhost" id="onlineStatus"></div>
+          <div class="statusPill" id="themePill"></div>
+          <button id="helpBtn" class="iconPill" type="button">Guide</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="hubCard" aria-label="Translator">
+      <div class="cardGlow"></div>
+
+      <div class="langTop">
+        <div class="langTopLabel">Translate Between</div>
+      </div>
+
+      <div class="langChooserRow">
+        <div class="chooserCol">
+          <div class="chooserLabel">Source Language</div>
+          <div class="selectWrap">
+            <select id="sourceLang"></select>
+          </div>
+        </div>
+
+        <div class="swapCenterWrap">
+          <div class="swapCenterBadge">⇄</div>
+        </div>
+
+        <div class="chooserCol">
+          <div class="chooserLabel">Target Language</div>
+          <div class="selectWrap selectWrapAccent">
+            <select id="targetLang"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="ioHubGrid">
+        <section class="panel panelInput">
+          <div class="panelHead">
+            <label for="inputText" class="panelTitle">Input</label>
+            <span class="panelMeta">Real-time</span>
+          </div>
+
+          <textarea id="inputText" placeholder="Type here..."></textarea>
+
+          <div class="small" id="suggestBox"></div>
+          <div id="suggestBar"></div>
+        </section>
+
+        <div class="midSwap">
+          <button class="midSwapBtn" type="button" aria-label="Swap languages" tabindex="-1">⇄</button>
+        </div>
+
+        <section class="panel panelOutput">
+          <div class="panelHead">
+            <label class="panelTitle">Output</label>
+            <span class="panelMeta">Translation</span>
+          </div>
+
+          <div class="output" id="outputText">Translation will appear here...</div>
+
+          <div id="senseArea" class="senseArea" style="display:none;">
+            <label for="senseSelect">Choose meaning (sense)</label>
+            <select id="senseSelect"></select>
+            <div class="small" id="senseHint"></div>
+          </div>
+
+          <div class="small" id="pronBox"></div>
+          <div class="small" id="missingBox"></div>
+        </section>
+      </div>
+
+      <div class="actionRow">
+        <button id="clearBtn" type="button" class="actionBtn actionBtnWarm">Clear</button>
+        <button id="copyBtn" type="button" class="actionBtn actionBtnGold">Copy Output</button>
+        <button id="helpBtnBottom" type="button" class="actionBtn actionBtnGhost">Language Guide</button>
+      </div>
+    </section>
+
+    
+
+    <footer class="footer">
+      <span class="footerText">NEUST • Cross-Language Translator Prototype • Designed for Filipino Communities</span>
+    </footer>
+  </main>
+
+  <!-- Tutorial / Guidelines Modal -->
+  <div id="tutorialModal">
+    <div class="box">
+      <h3>How to use the Translator (Prototype)</h3>
+      <ul>
+        <li><b>Type complete words</b> (example: <b>hindi</b>, not <b>ndi</b>).</li>
+        <li><b>Use proper spacing</b> for phrases (example: <b>maraming salamat</b>).</li>
+        <li>If a word has <b>multiple meanings</b>, choose the correct <b>sense</b>.</li>
+        <li>This is <b>dictionary-based</b> (not AI), so some words may be <b>Not found</b>.</li>
+      </ul>
+      <button id="closeTutorial" type="button" class="btn btnPrimary">Got it</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js");
+      });
+    }
+
+    const helpBtnBottom = document.getElementById("helpBtnBottom");
+    const helpBtn = document.getElementById("helpBtn");
+    const tutorialModal = document.getElementById("tutorialModal");
+
+    if (helpBtnBottom && tutorialModal) {
+      helpBtnBottom.addEventListener("click", () => {
+        tutorialModal.style.display = "block";
+      });
+    }
+
+    
+  </script>
+</body>
+</html>
