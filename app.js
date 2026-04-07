@@ -583,46 +583,41 @@ function suggestIfAny(src, text) {
 }
 
 // ================= TRANSLATION ENGINE =================
+function tokenizeWithPunctuation(text) {
+  return String(text || "").match(/[A-Za-zÀ-ÿ0-9']+|[.,!?;:()"-]+|\s+/g) || [];
+}
+
 function translateChunk(src, tgt, text, missing) {
   const dict = LOOKUPS[src][tgt];
-  const s = norm(text);
+  const tokens = tokenizeWithPunctuation(text);
 
-  if (dict && dict.has(s)) return dict.get(s);
+  const wordTokens = tokens
+    .filter(t => /[A-Za-zÀ-ÿ0-9']/.test(t))
+    .map(t => norm(t));
 
-  // ✅ If user typed a joined word, try matching it to a 2-word phrase in dictionary
-  if (dict && !s.includes(" ")) {
-    for (let i = 2; i <= Math.min(7, s.length - 2); i++) {
-      const candidate = `${s.slice(0, i)} ${s.slice(i)}`;
-      if (dict.has(candidate)) return dict.get(candidate);
-    }
-  }
-
-  // ✅ If user typed spaced words, try joined form too
-  if (dict && s.includes(" ")) {
-    const joined = s.replace(/\s+/g, "");
-    if (dict.has(joined)) return dict.get(joined);
-  }
-
-
-  const words = s.split(" ").filter(Boolean);
   const key = `${src}_${tgt}`;
 
   if (!translateChunk._cache) translateChunk._cache = {};
   if (dict && !translateChunk._cache[key]) {
-    translateChunk._cache[key] = Array.from(dict.keys()).sort((a, b) => b.split(" ").length - a.split(" ").length);
+    translateChunk._cache[key] = Array.from(dict.keys()).sort(
+      (a, b) => b.split(" ").length - a.split(" ").length
+    );
   }
+
   const phraseKeys = dict ? translateChunk._cache[key] : [];
 
   let i = 0;
-  const out = [];
-  while (i < words.length) {
+  const translatedWords = [];
+
+  while (i < wordTokens.length) {
     let matched = false;
 
     for (const phrase of phraseKeys) {
       const pt = phrase.split(" ");
-      const slice = words.slice(i, i + pt.length).join(" ");
+      const slice = wordTokens.slice(i, i + pt.length).join(" ");
+
       if (slice === phrase) {
-        out.push(dict.get(phrase));
+        translatedWords.push(dict.get(phrase));
         i += pt.length;
         matched = true;
         break;
@@ -630,16 +625,32 @@ function translateChunk(src, tgt, text, missing) {
     }
 
     if (!matched) {
-      const w = words[i];
-      if (dict && dict.has(w)) out.push(dict.get(w));
+      const w = wordTokens[i];
+
+      if (dict && dict.has(w)) translatedWords.push(dict.get(w));
       else {
         missing.add(w);
-        out.push(w);
+        translatedWords.push(w);
       }
+
       i++;
     }
   }
-  return out.join(" ");
+
+  let wordIndex = 0;
+  const out = [];
+
+  for (const token of tokens) {
+    if (/^\s+$/.test(token)) {
+      out.push(token);
+    } else if (/[A-Za-zÀ-ÿ0-9']/.test(token)) {
+      out.push(translatedWords[wordIndex++] || token);
+    } else {
+      out.push(token);
+    }
+  }
+
+  return out.join("");
 }
 
 async function translate() {
@@ -712,7 +723,7 @@ async function translate() {
 
   // ---- Dictionary first ----
   const missing = new Set();
-  const dictOut = translateChunk(src, tgt, text, missing);
+  const dictOut = translateChunk(src, tgt, raw, missing);
 
   if (requestId !== CURRENT_TRANSLATION_ID) return;
   output.innerText = dictOut;
