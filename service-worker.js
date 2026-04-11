@@ -1,4 +1,4 @@
-const CACHE_NAME = "translator-pwa-v3";
+const CACHE_NAME = "translator-pwa-v4";
 
 const ASSETS = [
   "./",

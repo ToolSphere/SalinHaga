@@ -1,3 +1,5 @@
+/* style.css */
+
 /* =========
    THEME
 ========= */
@@ -544,6 +546,13 @@ textarea{
   cursor:pointer;
   box-shadow: 0 14px 24px rgba(0,0,0,.14);
   transition: transform .18s ease, filter .18s ease;
+}
+
+.actionBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
 }
 
 .actionBtn:hover{

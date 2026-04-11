@@ -1,3 +1,6 @@
+// app.js 
+
+
 // ================= LANGUAGES =================
 const LANGS = {
   fil: "Filipino / Tagalog",
@@ -9,7 +12,16 @@ const LANGS = {
 
 // ================= COMMON FIXES (shorthand) =================
 const COMMON_FIXES = {
-  fil: { ndi: "hindi", d: "di", wla: "wala", slmt: "salamat", kmsta: "kumusta" },
+  fil: {
+    ndi: "hindi",
+    d: "di",
+    wla: "wala",
+    slmt: "salamat",
+    kmsta: "kumusta",
+    kaba: "ka ba",
+    napano: "napaano",
+    npano: "napaano"
+  },
   ilo: {},
   pam: {},
   ceb: {},
@@ -27,7 +39,12 @@ const DATA = [
   { fil: "ingat ka", ilo: "agannad ka", pam: "ingat ka" },
   { fil: "sandali lang", ilo: "maysa a bassit", pam: "sandali mu" },
   { fil: "good luck", ilo: "narinay a gundaway", pam: "good luck" },
-
+  { fil: "napaano", ilo: "napasamak", pam: "nanu ing menyari" },
+  { fil: "napano", ilo: "napasamak", pam: "nanu ing menyari" },
+  { fil: "anong nangyari", ilo: "ania ti napasamak", pam: "nanu ing menyari" },
+  { fil: "ano ang nangyari", ilo: "ania ti napasamak", pam: "nanu ing menyari" },
+  { fil: "paumanhin", ilo: "pakawan", pam: "paumanhin" },
+  { fil: "pasensya", ilo: "pakawan", pam: "pasensya" },
   { fil: "salamat", ilo: "agyamanak", pam: "salamat" },
   { fil: "oo", ilo: "wen", pam: "wa" },
   { fil: "hindi", ilo: "saan", pam: "aliwa" },
@@ -189,6 +206,9 @@ const copyBtn = document.getElementById("copyBtn");
 const helpBtn = document.getElementById("helpBtn");
 const tutorialModal = document.getElementById("tutorialModal");
 const closeTutorial = document.getElementById("closeTutorial");
+const micBtn = document.getElementById("micBtn");
+const stopMicBtn = document.getElementById("stopMicBtn");
+const speakBtn = document.getElementById("speakBtn");
 
 
 // ===== Background slideshow per language (by TARGET language) =====
@@ -340,10 +360,6 @@ function stopBgSlideshow() {
 
 
 // ================= CACHE =================
-const TRANSLATION_CACHE = {};
-try {
-  Object.assign(TRANSLATION_CACHE, JSON.parse(localStorage.getItem("translator_cache") || "{}"));
-} catch {}
 
 function norm(t) {
   return String(t || "")
@@ -364,37 +380,53 @@ const GOOGLE_LANG = {
   war: "war",
 };
 
-async function googleFallbackTranslate(text, sl, tl) {
-  const clean = norm(text);
+const SPEECH_RECOG_LANG = {
+  fil: "fil-PH",
+  ilo: "fil-PH",
+  pam: "fil-PH",
+  ceb: "ceb-PH",
+  war: "fil-PH",
+};
 
-  // map to Google codes
+const SPEECH_TTS_LANG = {
+  fil: "fil-PH",
+  ilo: "fil-PH",
+  pam: "fil-PH",
+  ceb: "ceb-PH",
+  war: "fil-PH",
+};
+
+async function googleFallbackTranslate(text, sl, tl) {
+  const rawText = String(text || "").trim();
+
   const gsl = GOOGLE_LANG[sl] || sl;
   const gtl = GOOGLE_LANG[tl] || tl;
 
-  const key = `${gsl}|${gtl}|${clean}`;
-  if (TRANSLATION_CACHE[key]) return TRANSLATION_CACHE[key];
-
   const url = new URL("https://translate.googleapis.com/translate_a/single");
   url.searchParams.set("client", "gtx");
-  url.searchParams.set("sl", gsl);     // ✅ FIX: set source language
+  url.searchParams.set("sl", gsl);
   url.searchParams.set("tl", gtl);
   url.searchParams.set("dt", "t");
-  url.searchParams.set("q", clean);
+  url.searchParams.set("q", rawText);
 
   const res = await fetch(url.toString());
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
   const data = await res.json();
-  const translated = (data?.[0] || []).map((seg) => seg?.[0]).filter(Boolean).join("") || "";
+  return (data?.[0] || [])
+    .map((seg) => seg?.[0])
+    .filter(Boolean)
+    .join("") || "";
+}
 
-  if (clean.length >= 2) {
-    TRANSLATION_CACHE[key] = translated;
-    try {
-      localStorage.setItem("translator_cache", JSON.stringify(TRANSLATION_CACHE));
-    } catch {}
-  }
+function getExactDictionaryTranslation(src, tgt, rawText) {
+  const dict = LOOKUPS[src][tgt];
+  if (!dict) return "";
 
-  return translated;
+  const cleaned = norm(rawText);
+  if (!cleaned) return "";
+
+  return dict.get(cleaned) || "";
 }
 
 function shouldAutoFallback(inputText, dictOut, missing) {
@@ -458,6 +490,102 @@ if (copyBtn) {
     }
   };
 }
+
+let recognition = null;
+let isListening = false;
+
+function getSpeechRecognitionCtor() {
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+
+function startVoiceInput() {
+  const SpeechRecognitionCtor = getSpeechRecognitionCtor();
+
+  if (!SpeechRecognitionCtor) {
+    alert("Voice input is not supported in this browser. Try Chrome or Edge.");
+    return;
+  }
+
+  if (isListening) return;
+
+  recognition = new SpeechRecognitionCtor();
+  recognition.lang = SPEECH_RECOG_LANG[srcSel.value] || "fil-PH";
+  recognition.interimResults = true;
+  recognition.continuous = false;
+  recognition.maxAlternatives = 1;
+
+  let finalTranscript = "";
+
+  recognition.onstart = () => {
+    isListening = true;
+    if (onlineStatus) onlineStatus.innerText = "Listening...";
+    if (micBtn) micBtn.disabled = true;
+    if (stopMicBtn) stopMicBtn.disabled = false;
+  };
+
+  recognition.onresult = (event) => {
+    let interimTranscript = "";
+
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript || "";
+      if (event.results[i].isFinal) {
+        finalTranscript += transcript;
+      } else {
+        interimTranscript += transcript;
+      }
+    }
+
+    input.value = `${finalTranscript}${interimTranscript}`.trim();
+    CURRENT_TRANSLATION_ID++;
+    clearTimeout(tmr);
+    tmr = setTimeout(() => translate(), 150);
+  };
+
+  recognition.onerror = (event) => {
+    isListening = false;
+    if (onlineStatus) onlineStatus.innerText = `Mic error: ${event.error || "unknown"}`;
+    if (micBtn) micBtn.disabled = false;
+    if (stopMicBtn) stopMicBtn.disabled = true;
+  };
+
+  recognition.onend = () => {
+    isListening = false;
+    if (onlineStatus) onlineStatus.innerText = "";
+    if (micBtn) micBtn.disabled = false;
+    if (stopMicBtn) stopMicBtn.disabled = true;
+  };
+
+  recognition.start();
+}
+
+function stopVoiceInput() {
+  if (recognition && isListening) {
+    recognition.stop();
+  }
+}
+
+function speakOutputText() {
+  const textToSpeak = (output.innerText || "").trim();
+  if (!textToSpeak || textToSpeak === "Translation will appear here…") return;
+
+  if (!("speechSynthesis" in window)) {
+    alert("Text-to-speech is not supported in this browser.");
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(textToSpeak);
+  utterance.lang = SPEECH_TTS_LANG[tgtSel.value] || "fil-PH";
+  utterance.rate = 1;
+  utterance.pitch = 1;
+
+  window.speechSynthesis.speak(utterance);
+}
+
+if (micBtn) micBtn.onclick = startVoiceInput;
+if (stopMicBtn) stopMicBtn.onclick = stopVoiceInput;
+if (speakBtn) speakBtn.onclick = speakOutputText;
 
 // ================= HELPERS =================
 function setPron(targetLang, translatedText) {
@@ -584,7 +712,7 @@ function suggestIfAny(src, text) {
 
 // ================= TRANSLATION ENGINE =================
 function tokenizeWithPunctuation(text) {
-  return String(text || "").match(/[A-Za-zÀ-ÿ0-9']+|[.,!?;:()"-]+|\s+/g) || [];
+  return String(text || "").match(/[A-Za-zÀ-ÿ0-9']+|[.,!?;:()[\]"<>-]+|\s+/g) || [];
 }
 
 function translateChunk(src, tgt, text, missing) {
@@ -659,11 +787,19 @@ async function translate() {
   const src = srcSel.value;
   const tgt = tgtSel.value;
   const raw = input.value || "";
+  const safeRaw = raw.replace(/[<>]/g, "").trim();
   const text = norm(raw);
+  const wordCount = text.split(" ").filter(Boolean).length;
 
   hideSense();
   pronBox.innerText = "";
-  suggestIfAny(src, text);
+
+  if (wordCount <= 2) {
+    suggestIfAny(src, text);
+  } else {
+    suggestBox.innerText = "";
+    showSuggestChips([], "");
+  }
 
   if (!text) {
     if (requestId !== CURRENT_TRANSLATION_ID) return;
@@ -673,30 +809,38 @@ async function translate() {
     return;
   }
 
-  // ---- Ambiguity chooser (dictionary-based) ----
   const ambKey = `${src}|${tgt}`;
   if (AMBIG[ambKey] && AMBIG[ambKey][text]) {
     const options = AMBIG[ambKey][text];
     if (requestId !== CURRENT_TRANSLATION_ID) return;
     output.innerText = options[0].out;
     miss.innerText = "";
-    pronBox.innerHTML = options[0].pron ? `<span class="pill">Pronunciation:</span> ${options[0].pron}` : "";
+    pronBox.innerHTML = options[0].pron
+      ? `<span class="pill">Pronunciation:</span> ${options[0].pron}`
+      : "";
     showSense(options, text);
     return;
   }
 
-  // ---- Template handling: API-first (prevents mixed language) ----
+  const exactShortMatch = getExactDictionaryTranslation(src, tgt, raw);
+  if (wordCount <= 2 && exactShortMatch) {
+    if (requestId !== CURRENT_TRANSLATION_ID) return;
+    output.innerText = exactShortMatch;
+    miss.innerText = "";
+    setPron(tgt, exactShortMatch);
+    if (onlineStatus) onlineStatus.innerText = "";
+    return;
+  }
+
   for (const t of TEMPLATES) {
     if (t.src !== src) continue;
 
     const m = text.match(t.pattern);
     if (!m) continue;
-
     if (!t.build[tgt]) break;
 
-    // Full-sentence API for templates
     try {
-      const online = await googleFallbackTranslate(raw.trim(), src, tgt);
+      const online = await googleFallbackTranslate(safeRaw, src, tgt);
       if (requestId !== CURRENT_TRANSLATION_ID) return;
       if (online) {
         output.innerText = online;
@@ -706,10 +850,9 @@ async function translate() {
         return;
       }
     } catch (e) {
-      // ignore and fall back to dictionary template
+      // continue to template fallback
     }
 
-    // Dictionary template fallback (do NOT translate captured chunk word-by-word)
     const captured = m[1] ? m[1].trim() : "";
     const finalOut = t.build[tgt](captured);
 
@@ -721,7 +864,21 @@ async function translate() {
     return;
   }
 
-  // ---- Dictionary first ----
+  try {
+    const online = await googleFallbackTranslate(safeRaw, src, tgt);
+    if (requestId !== CURRENT_TRANSLATION_ID) return;
+
+    if (online && online.trim()) {
+      output.innerText = online;
+      miss.innerText = "";
+      pronBox.innerText = "";
+      if (onlineStatus) onlineStatus.innerText = "";
+      return;
+    }
+  } catch (e) {
+    // continue to dictionary fallback
+  }
+
   const missing = new Set();
   const dictOut = translateChunk(src, tgt, raw, missing);
 
@@ -729,21 +886,6 @@ async function translate() {
   output.innerText = dictOut;
   miss.innerText = missing.size ? `Not found: ${[...missing].join(", ")}` : "";
   setPron(tgt, dictOut);
-
-  // ---- Hybrid fallback (silent) ----
-  if (shouldAutoFallback(text, dictOut, missing)) {
-    try {
-      const online = await googleFallbackTranslate(raw.trim(), src, tgt);
-      if (requestId !== CURRENT_TRANSLATION_ID) return;
-      if (online) {
-        output.innerText = online;
-        miss.innerText = "";
-        pronBox.innerText = "";
-      }
-    } catch (e) {
-      // keep dictionary output if API fails
-    }
-  }
 
   if (onlineStatus) onlineStatus.innerText = "";
 }
@@ -778,6 +920,7 @@ tgtSel.onchange = () => { startBgSlideshow(tgtSel.value, { shuffle: true, interv
 // debounce typing
 let tmr = null;
 input.oninput = () => {
+  CURRENT_TRANSLATION_ID++; // immediately invalidate older async results
   clearTimeout(tmr);
   tmr = setTimeout(() => translate(), 350);
 };
