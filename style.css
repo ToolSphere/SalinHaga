@@ -50,6 +50,13 @@ html, body{
   position:relative;
 }
 
+.logo {
+  width: clamp(38px, 4vw, 52px);
+  height: auto;
+  border-radius: 12px;
+  object-fit: contain;
+}
+
 body{
   margin:0;
   color:var(--text);
