@@ -56,13 +56,6 @@ body{
   background:transparent;
 }
 
-.logo {
-  width: clamp(38px, 4vw, 52px);
-  height: auto;
-  border-radius: 12px;
-  object-fit: contain;
-}
-
 /* =========
    PHOTO BACKGROUND
 ========= */
